@@ -1,0 +1,6 @@
+{
+  "name": "LocalPdfTools",
+  "description": "Production-ready, privacy-first client-side PDF utility suite to remove pages, split PDFs, add watermarks, convert to grayscale, decode Base64, and inspect metadata.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

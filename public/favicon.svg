@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Rounded elegant indigo background tile -->
+  <rect width="32" height="32" rx="8" fill="#4f46e5"/>
+  
+  <!-- Base document page shape in pure white -->
+  <path d="M9 8C9 6.89543 9.89543 6 11 6H17.5L23 11.5V24C23 25.1046 22.1046 26 21 26H11C9.89543 26 9 25.1046 9 24V8Z" fill="#ffffff"/>
+  
+  <!-- Folded corner page geometry -->
+  <path d="M17.5 6V11.5H23L17.5 6Z" fill="#c7d2fe"/>
+  
+  <!-- Stylized horizontal lines representing PDF content elements -->
+  <rect x="12" y="14" width="8" height="2" rx="1" fill="#4f46e5"/>
+  <rect x="12" y="18" width="8" height="2" rx="1" fill="#4f46e5"/>
+  <rect x="12" y="22" width="5" height="2" rx="1" fill="#818cf8"/>
+</svg>
