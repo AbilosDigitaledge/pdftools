@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://localpdftools.com/sitemap.xml
+Sitemap: https://www.localpdf.tools/sitemap.xml
