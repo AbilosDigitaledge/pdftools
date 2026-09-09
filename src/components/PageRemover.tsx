@@ -9,7 +9,7 @@ import {
   Download, ArrowLeft, ShieldCheck, CheckCircle, Info, Loader2 
 } from 'lucide-react';
 import { PdfFileState, PdfPageInfo } from '../types';
-import { renderPdfPageToDataUrl } from '../lib/pdf/pdfRenderer';
+import { renderPdfPageToDataUrl, renderPdfPageFromDocToDataUrl } from '../lib/pdf/pdfRenderer';
 import { removePagesFromPdf, extractPagesFromPdf } from '../lib/pdf/pdfOperations';
 import FileUploader from './FileUploader';
 import AdContainer from './AdContainer';
@@ -62,19 +62,19 @@ export default function PageRemover({ initialFile, onClearInitialFile }: PageRem
     const loadPages = async () => {
       setLoadingThumbnails(true);
       try {
-        // Read page count and render each page thumbnail
+        // Read page count and render each page thumbnail using a copied array buffer slice
         const tempPages: PdfPageInfo[] = [];
         const pdfjsLib = await import('pdfjs-dist');
-        const doc = await pdfjsLib.getDocument({ data: new Uint8Array(fileState.arrayBuffer) }).promise;
+        const doc = await pdfjsLib.getDocument({ data: new Uint8Array(fileState.arrayBuffer.slice(0)) }).promise;
         const pageCount = doc.numPages;
 
         setFileState(prev => prev ? { ...prev, pageCount } : null);
 
-        // Render thumbnails in parallel
+        // Render thumbnails in parallel using the loaded doc proxy
         const promises = [];
         for (let i = 1; i <= pageCount; i++) {
           promises.push(
-            renderPdfPageToDataUrl(fileState.arrayBuffer, i, 0.4)
+            renderPdfPageFromDocToDataUrl(doc, i, 0.4)
               .then(url => {
                 tempPages.push({
                   pageNumber: i,
@@ -82,7 +82,8 @@ export default function PageRemover({ initialFile, onClearInitialFile }: PageRem
                   thumbnailUrl: url,
                 });
               })
-              .catch(() => {
+              .catch((err) => {
+                console.error(`Failed to render page ${i} thumbnail:`, err);
                 // fallback placeholder if render fails
                 tempPages.push({
                   pageNumber: i,
@@ -95,6 +96,9 @@ export default function PageRemover({ initialFile, onClearInitialFile }: PageRem
         await Promise.all(promises);
         tempPages.sort((a, b) => a.pageNumber - b.pageNumber);
         setPages(tempPages);
+        
+        // Clean up loaded document proxy
+        await (doc as any).destroy();
       } catch (err) {
         console.error("Failed to render thumbnails:", err);
       } finally {

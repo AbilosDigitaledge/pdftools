@@ -22,7 +22,8 @@ export async function renderPdfPageToDataUrl(
   pageNumber: number,
   scale = 1.0
 ): Promise<string> {
-  const data = new Uint8Array(arrayBuffer);
+  // Create a copy of the ArrayBuffer to prevent detaching the original buffer when passing to pdf.js worker
+  const data = new Uint8Array(arrayBuffer.slice(0));
   const loadingTask = pdfjsLib.getDocument({ data });
   const pdfDoc = await loadingTask.promise;
   const page = await pdfDoc.getPage(pageNumber);
@@ -44,7 +45,42 @@ export async function renderPdfPageToDataUrl(
     canvas: canvas,
   };
   
-  await renderContext.canvasContext;
+  await page.render(renderContext).promise;
+  
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+  // Clean up the loaded document
+  await (pdfDoc as any).destroy();
+  return dataUrl;
+}
+
+/**
+ * Renders a specific page from an already loaded PDF document proxy to a data URL (image/jpeg).
+ * This is extremely fast because it does not require loading/parsing the entire PDF document multiple times.
+ */
+export async function renderPdfPageFromDocToDataUrl(
+  pdfDoc: any,
+  pageNumber: number,
+  scale = 1.0
+): Promise<string> {
+  const page = await pdfDoc.getPage(pageNumber);
+  
+  const viewport = page.getViewport({ scale });
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  
+  if (!context) {
+    throw new Error('Could not create 2D canvas context.');
+  }
+  
+  canvas.width = viewport.width;
+  canvas.height = viewport.height;
+  
+  const renderContext = {
+    canvasContext: context,
+    viewport: viewport,
+    canvas: canvas,
+  };
+  
   await page.render(renderContext).promise;
   
   const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
@@ -62,7 +98,7 @@ export async function convertPdfToGrayscale(
   arrayBuffer: ArrayBuffer,
   onProgress?: (progress: number) => void
 ): Promise<Uint8Array> {
-  const data = new Uint8Array(arrayBuffer);
+  const data = new Uint8Array(arrayBuffer.slice(0));
   const loadingTask = pdfjsLib.getDocument({ data });
   const pdfDoc = await loadingTask.promise;
   const pageCount = pdfDoc.numPages;
