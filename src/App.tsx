@@ -20,10 +20,17 @@ export default function App() {
   const [route, setRoute] = useState<AppRoute>('/');
   const [featuredFile, setFeaturedFile] = useState<{ file: File; arrayBuffer: ArrayBuffer } | null>(null);
 
-  // Sync hash routing so clicking back/forward or deep linking works elegantly
+  // Sync routing so clicking back/forward, deep linking, and clean URLs work perfectly
   useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '') as AppRoute;
+    const handleLocationChange = () => {
+      // 1. Try to read from hash first (backwards-compatibility/hash links)
+      let currentPath = window.location.hash.replace('#', '') as AppRoute;
+      
+      // 2. If no hash, fall back to pathname
+      if (!currentPath) {
+        currentPath = window.location.pathname as AppRoute;
+      }
+
       const validRoutes: AppRoute[] = [
         '/',
         '/pdf-page-remover',
@@ -43,25 +50,31 @@ export default function App() {
         '/about',
         '/contact'
       ];
-      if (validRoutes.includes(hash)) {
-        setRoute(hash);
-      } else if (!hash) {
+
+      if (validRoutes.includes(currentPath)) {
+        setRoute(currentPath);
+      } else {
         setRoute('/');
       }
     };
 
-    window.addEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+    
     // Initialize on load
-    handleHashChange();
+    handleLocationChange();
 
     return () => {
-      window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
     };
   }, []);
 
   const handleSetRoute = (newRoute: AppRoute) => {
     setRoute(newRoute);
-    window.location.hash = newRoute === '/' ? '' : newRoute;
+    if (window.location.pathname !== newRoute) {
+      window.history.pushState(null, '', newRoute);
+    }
   };
 
   const handleFeaturedFileLoaded = (file: File, arrayBuffer: ArrayBuffer) => {
